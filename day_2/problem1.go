@@ -25,20 +25,22 @@ func main() {
 	fileLines := readFile(filePath)
 
 	sum := 0
-	for i, line := range fileLines {
+	for _, line := range fileLines {
 		colorCounts := readFileStr(line)
-		isValidRound := true
-		for _, colorCount := range colorCounts {
-			if !checkIfValid(colorCount) {
-				isValidRound = false
-				break
-			}
-		}
-		if isValidRound {
-			sum += i + 1
-		}
+		score := calculateScore(colorCounts)
+		sum += score
 	}
 	fmt.Println(sum)
+}
+
+func calculateScore(colorCounts []ColorCounts) int {
+	maxColorCounts := ColorCounts{0, 0, 0}
+	for _, colorCount := range colorCounts {
+		maxColorCounts.Red = max(maxColorCounts.Red, colorCount.Red)
+		maxColorCounts.Green = max(maxColorCounts.Green, colorCount.Green)
+		maxColorCounts.Blue = max(maxColorCounts.Blue, colorCount.Blue)
+	}
+	return maxColorCounts.Red * maxColorCounts.Green * maxColorCounts.Blue
 }
 
 func checkIfValid(colorCounts ColorCounts) bool {
