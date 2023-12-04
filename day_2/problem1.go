@@ -4,19 +4,52 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
-
-type Color int
 
 const (
-	Red Color = iota
-	Green
-	Blue
+	RED_CUBES_LIMIT   = 12
+	GREEN_CUBES_LIMIT = 13
+	BLUE_CUBES_LIMIT  = 14
 )
+
+type ColorCounts struct {
+	Red   int
+	Green int
+	Blue  int
+}
 
 func main() {
 	filePath := os.Args[1]
 	fileLines := readFile(filePath)
+
+	sum := 0
+	for i, line := range fileLines {
+		colorCounts := readFileStr(line)
+		isValidRound := true
+		for _, colorCount := range colorCounts {
+			if !checkIfValid(colorCount) {
+				isValidRound = false
+				break
+			}
+		}
+		if isValidRound {
+			sum += i + 1
+		}
+	}
+	fmt.Println(sum)
+}
+
+func checkIfValid(colorCounts ColorCounts) bool {
+	if colorCounts.Red > RED_CUBES_LIMIT {
+		return false
+	} else if colorCounts.Green > GREEN_CUBES_LIMIT {
+		return false
+	} else if colorCounts.Blue > BLUE_CUBES_LIMIT {
+		return false
+	}
+	return true
 }
 
 func readFile(filePath string) []string {
@@ -34,4 +67,34 @@ func readFile(filePath string) []string {
 		fileLines = append(fileLines, fileScanner.Text())
 	}
 	return fileLines
+}
+
+func readFileStr(line string) []ColorCounts {
+	// Game 1: 10 red, 7 green, 3 blue; 5 blue, 3 red, 10 green; 4 blue, 14 green, 7 red; 1 red, 11 green; 6 blue, 17 green, 15 red; 18 green, 7 red, 5 blue
+	splitLine := strings.Split(line, ":")
+	gameStates := strings.Split(splitLine[1], ";") // ["10 red, 7 green, 3 blue", ...]
+	colorCountsVec := make([]ColorCounts, len(gameStates))
+	for _, gameState := range gameStates {
+		colorCounts := ColorCounts{0, 0, 0}
+		singleRound := strings.Split(gameState, ",") // [ ... ,"10 red"]
+		for _, color := range singleRound {
+			countAndColor := strings.Split(strings.TrimSpace(color), " ")
+			countStr, color := countAndColor[0], countAndColor[1]
+			count, err := strconv.Atoi(countStr)
+			if err != nil {
+				fmt.Println("Error converting string to int")
+				panic(err)
+			}
+			switch color {
+			case "red":
+				colorCounts.Red += count
+			case "green":
+				colorCounts.Green += count
+			case "blue":
+				colorCounts.Blue += count
+			}
+		}
+		colorCountsVec = append(colorCountsVec, colorCounts)
+	}
+	return colorCountsVec
 }
