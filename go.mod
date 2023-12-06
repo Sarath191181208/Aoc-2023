@@ -1,3 +1,3 @@
-module day_3
+module day_4
 
 go 1.21.3
