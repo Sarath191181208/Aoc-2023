@@ -11,12 +11,26 @@ import (
 func main() {
 	filePath := os.Args[1]
 	fileContents := readFileFromPath(filePath)
-	solveProblem1(fileContents)
+	solveProblem2(fileContents)
 }
 
 func solveProblem1(fileContents []string) {
 	times := readSpaceDelimeterdInts(strings.Split(fileContents[0], ":")[1])
 	distances := readSpaceDelimeterdInts(strings.Split(fileContents[1], ":")[1])
+	mul := 1
+	for i, time := range times {
+		mul *= calcNumRecordBreaks(time, distances[i])
+	}
+	fmt.Print(mul)
+}
+
+func solveProblem2(fileContents []string) {
+	times := readSpaceDelimeterdInts(
+		strings.ReplaceAll(strings.Split(fileContents[0], ":")[1], " ", ""),
+	)
+	distances := readSpaceDelimeterdInts(
+		strings.ReplaceAll(strings.Split(fileContents[1], ":")[1], " ", ""),
+	)
 	mul := 1
 	for i, time := range times {
 		mul *= calcNumRecordBreaks(time, distances[i])
