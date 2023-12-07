@@ -11,7 +11,7 @@ import (
 func main() {
 	filePath := os.Args[1]
 	fileContents := readFileFromPath(filePath)
-	solveProblem1(fileContents)
+	solveProblem2(fileContents)
 }
 
 func solveProblem1(fileContents []string) {
@@ -25,6 +25,34 @@ func solveProblem1(fileContents []string) {
 		}
 	}
 	fmt.Println(findMinInArr(seedsArr))
+}
+
+type SeedHolder struct {
+	startNum int
+	endNum   int
+}
+
+func solveProblem2(fileContents []string) {
+	groupedSeedsArr := groupSeedsArray(extractSeedsArray(fileContents))
+	groupedMapBlocks := splitStringListAsBlocks(fileContents[2:])
+	for _, block := range groupedMapBlocks {
+		domainConversionData := parseSingleBlock(block[1:])
+		tempTransformedRanges := applyRangedDomainTransform(&groupedSeedsArr, domainConversionData)
+		groupedSeedsArr = tempTransformedRanges
+		// fmt.Println(groupedSeedsArr)
+	}
+	fmt.Println(groupedSeedsArr.Min().startNum)
+}
+
+func groupSeedsArray(arr []int) SeedHolderStack {
+	var res SeedHolderStack
+	for i := 0; i < len(arr); i += 2 {
+		res.Push(SeedHolder{
+			startNum: arr[i],
+			endNum:   arr[i] + arr[i+1],
+		})
+	}
+	return res
 }
 
 func readFileFromPath(filePath string) []string {
@@ -79,6 +107,50 @@ func parseSingleBlock(singleConversionBlockString []string) []ConversionData {
 	return res
 }
 
+func applyRangedDomainTransform(
+	stack *SeedHolderStack,
+	domainConversionData []ConversionData,
+) SeedHolderStack {
+	var temp SeedHolderStack
+	for !stack.IsEmpty() {
+		ele, hasElement := stack.Pop()
+		if !hasElement {
+			break
+		}
+		flagIsMatched := false
+		for _, data := range domainConversionData {
+			start := data.previousDomainStartNumber
+			end := data.previousDomainStartNumber + data.stepValue - 1
+			overlap_start := max(start, ele.startNum)
+			overlap_end := min(ele.endNum, end+1)
+			if overlap_start < overlap_end {
+				temp.Push(SeedHolder{
+					startNum: (overlap_start - data.previousDomainStartNumber) + data.resultingDomainStartNumber,
+					endNum:   (overlap_end - data.previousDomainStartNumber) + data.resultingDomainStartNumber,
+				})
+				if overlap_start > ele.startNum {
+					stack.Push(SeedHolder{
+						startNum: ele.startNum,
+						endNum:   overlap_start,
+					})
+				}
+				if overlap_end < ele.endNum {
+					stack.Push(SeedHolder{
+						startNum: overlap_end,
+						endNum:   ele.endNum,
+					})
+				}
+				flagIsMatched = true
+				break
+			}
+		}
+		if !flagIsMatched {
+			temp.Push(ele)
+		}
+	}
+	return temp
+}
+
 func applyDomainTransform(num int, converstionData []ConversionData) int {
 	for _, data := range converstionData {
 		start := data.previousDomainStartNumber
@@ -119,4 +191,35 @@ func readSpaceDelimeterdInts(s string) []int {
 		numsArr = append(numsArr, num)
 	}
 	return numsArr
+}
+
+type SeedHolderStack []SeedHolder
+
+func (s *SeedHolderStack) IsEmpty() bool {
+	return len(*s) == 0
+}
+
+func (s *SeedHolderStack) Push(val SeedHolder) {
+	*s = append(*s, val) // Simply append the new value to the end of the stack
+}
+
+func (s *SeedHolderStack) Pop() (SeedHolder, bool) {
+	if s.IsEmpty() {
+		return SeedHolder{}, false
+	} else {
+		index := len(*s) - 1   // Get the index of the top most element.
+		element := (*s)[index] // Index into the slice and obtain the element.
+		*s = (*s)[:index]      // Remove it from the stack by slicing it off.
+		return element, true
+	}
+}
+
+func (s *SeedHolderStack) Min() SeedHolder {
+	smallNum := (*s)[0]
+	for _, val := range *s {
+		if smallNum.startNum > val.startNum {
+			smallNum = val
+		}
+	}
+	return smallNum
 }
